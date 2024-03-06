@@ -17,7 +17,7 @@ public:
     
     virtual ~WorkerInterface() = default;
     
-    virtual std::future<Matrix> AsyncProcess(Matrix mtx) = 0;
+    virtual std::future<Matrix> AsyncProcess(Matrix) = 0;
 };
 
 std::shared_ptr<WorkerInterface> get_new_worker();

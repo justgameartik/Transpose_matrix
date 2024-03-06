@@ -17,18 +17,10 @@ public:
     };
 
     ~TransposeWorker() {
-        std::unique_lock lock(task_mutex);
-        while(!tasks.empty()) {
-            lock.unlock();
-            wake_up.notify_all();
-            lock.lock();
-        }
-        lock.unlock();
         quite = true;
         for (auto& thread : threads) {
-            if (thread.joinable()) {
-                thread.join();
-            }
+            wake_up.notify_all();
+            thread.join();
         }
     }
 
@@ -80,14 +72,11 @@ private:
 };
 
 Matrix MakeTranspose(const Matrix& matrix) {
-        if (matrix.height == 0 || matrix.width == 0) {
-            throw std::runtime_error("Matrix cannot be transposed");
-        }
-
-        Matrix transposed_matrix;
-        transposed_matrix.width = matrix.height;
-        transposed_matrix.height = matrix.width;
-        transposed_matrix.data.resize(size(matrix.data));
+        Matrix transposed_matrix {
+            std::vector<int>(matrix.data.size()),
+            matrix.height,
+            matrix.width
+        };
 
         for (size_t i = 0; i < matrix.height; i++) {
             for (size_t j = 0; j < matrix.width; j++) {
