@@ -16,7 +16,21 @@ public:
         }
     };
 
-    ~TransposeWorker() = default;
+    ~TransposeWorker() {
+        std::unique_lock lock(task_mutex);
+        while(!tasks.empty()) {
+            lock.unlock();
+            wake_up.notify_all();
+            lock.lock();
+        }
+        lock.unlock();
+        quite = true;
+        for (auto& thread : threads) {
+            if (thread.joinable()) {
+                thread.join();
+            }
+        }
+    }
 
     std::future<Matrix> AsyncProcess(Matrix mtx) {
         int task_id = last_task++;
@@ -53,8 +67,8 @@ private:
                 
                 std::promise<Matrix> p;
                 std::future<Matrix> f = p.get_future();
-                p.set_value(MakeTranspose(cur_task.first));
                 finished_tasks[cur_task.second] = std::move(f);
+                p.set_value(MakeTranspose(cur_task.first));
             }
         }
     }
