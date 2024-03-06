@@ -5,7 +5,7 @@ The number of threads is set in TransformWorker() constructor, but for now there
 The Class TransformWorker use common threadpool the result of which is future<Matrix> type.
 
 Here is example of usage this code:
-'''js
+```js
 #include "worker.hpp"
 
 Matrix matrix{
@@ -28,3 +28,4 @@ auto future = worker->AsyncProcess(matrix);
 //        3, 6
 //    }
 // }
+```
