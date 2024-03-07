@@ -1,7 +1,6 @@
 #include <thread>
 #include <queue>
 #include <unordered_map>
-#include <iostream>
 
 #include "worker.hpp"
 
@@ -72,21 +71,21 @@ private:
 };
 
 Matrix MakeTranspose(const Matrix& matrix) {
-        Matrix transposed_matrix {
-            std::vector<int>(matrix.data.size()),
-            matrix.height,
-            matrix.width
-        };
+    Matrix transposed_matrix {
+        std::vector<int>(matrix.data.size()),
+        matrix.height,
+        matrix.width
+    };
 
-        for (size_t i = 0; i < matrix.height; i++) {
-            for (size_t j = 0; j < matrix.width; j++) {
-                transposed_matrix.data[i+j*transposed_matrix.width] =
-                    matrix.data[i*matrix.width+j];
-            }
+    for (size_t i = 0; i < matrix.height; i++) {
+        for (size_t j = 0; j < matrix.width; j++) {
+            transposed_matrix.data[i+j*transposed_matrix.width] =
+                matrix.data[i*matrix.width+j];
         }
-        
-        return transposed_matrix;
     }
+    
+    return transposed_matrix;
+}
 
 std::shared_ptr<WorkerInterface> get_new_worker() {
     return std::shared_ptr<WorkerInterface>(new TransposeWorker());

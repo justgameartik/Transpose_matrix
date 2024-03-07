@@ -3,7 +3,5 @@
 build/
 
 a.exe
-test.cpp
-test.hpp
 main.cpp
 test.exe
