@@ -1,5 +1,5 @@
-#include <thread>
 #include <queue>
+#include <thread>
 #include <unordered_map>
 
 #include "worker.hpp"
@@ -8,9 +8,9 @@ Matrix MakeTranspose(const Matrix& matrix);
 
 class TransposeWorker : public WorkerInterface {
 public:
-    TransposeWorker(int32_t threads_num=2) {
+    TransposeWorker(int32_t threads_num=6) {
         threads.reserve(threads_num);
-        for (size_t i = 0; i < 2; i++) {
+        for (size_t i = 0; i < threads_num; i++) {
             threads.emplace_back(&run, this);
         }
     };
@@ -23,14 +23,18 @@ public:
         }
     }
 
-    std::future<Matrix> AsyncProcess(Matrix mtx) {
+    std::future<Matrix> AsyncProcess(const Matrix& mtx) {
         int task_id = last_task++;
+
+        std::unique_ptr<std::promise<Matrix>> p = 
+            std::make_unique<std::promise<Matrix>>();
+        std::future<Matrix> f = p->get_future();
+        promises[task_id] = std::move(p);
 
         AddTask(mtx, task_id);
         wake_up.notify_one();
 
-        while(finished_tasks.count(task_id) == 0) {}
-        return std::move(finished_tasks.at(task_id));
+        return f;
     }
 
 private:
@@ -41,10 +45,14 @@ private:
     std::atomic<bool> quite{false};
     // num of last taken task
     std::atomic<int> last_task = 0;
+    // mutex for queue
     std::mutex task_mutex;
     // flag if all threads are asleep and new task has been got
     std::condition_variable wake_up;
-    std::unordered_map<int, std::future<Matrix>> finished_tasks; 
+    // hashmap task_id->promise
+    std::unordered_map<int, std::unique_ptr<std::promise<Matrix>>> promises;
+    // mutex for hashmap
+    std::mutex promise_mutex;
 
     void run() {
         while (!quite) {
@@ -55,11 +63,9 @@ private:
                 auto cur_task = std::move(tasks.front());
                 tasks.pop();
                 lock.unlock();
-                
-                std::promise<Matrix> p;
-                std::future<Matrix> f = p.get_future();
-                finished_tasks[cur_task.second] = std::move(f);
-                p.set_value(MakeTranspose(cur_task.first));
+
+                std::unique_lock<std::mutex> p_lock(promise_mutex);
+                promises[cur_task.second]->set_value(MakeTranspose(cur_task.first));
             }
         }
     }

@@ -17,7 +17,9 @@ public:
     
     virtual ~WorkerInterface() = default;
     
-    virtual std::future<Matrix> AsyncProcess(Matrix) = 0;
+    virtual std::future<Matrix> AsyncProcess(const Matrix&) = 0;
 };
 
 std::shared_ptr<WorkerInterface> get_new_worker();
+
+Matrix MakeTranspose(const Matrix& matrix);

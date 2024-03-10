@@ -7,33 +7,16 @@ std::mt19937 gen(123512);
 std::vector<Matrix> GenerateMatrixes(size_t num_of_matrix=5){
     std::vector<Matrix> mtxs(num_of_matrix);
     for (size_t mtx_num = 0; mtx_num < num_of_matrix; mtx_num++) {
-        int num_of_values = gen() % 100;
-        mtxs[mtx_num].data.resize(num_of_values);
-        for (size_t value_num = 0; value_num < num_of_values; value_num++) {
+        mtxs[mtx_num].width = gen() % 100+1;
+        mtxs[mtx_num].height = gen() % 100+1;
+        mtxs[mtx_num].data.resize(mtxs[mtx_num].width*mtxs[mtx_num].height);
+        for (size_t value_num = 0; value_num < 
+                mtxs[mtx_num].width*mtxs[mtx_num].height; value_num++) {
             mtxs[mtx_num].data[value_num] = gen() % 1000;
         }
-        mtxs[mtx_num].width = (gen() % num_of_values)+1;
-        mtxs[mtx_num].height = num_of_values - mtxs[mtx_num].width;
     } 
 
     return mtxs;
-}
-
-Matrix MakeTranspose(const Matrix& matrix) {
-    Matrix transposed_matrix {
-        std::vector<int>(matrix.data.size()),
-        matrix.height,
-        matrix.width
-    };
-
-    for (size_t i = 0; i < matrix.height; i++) {
-        for (size_t j = 0; j < matrix.width; j++) {
-            transposed_matrix.data[i+j*transposed_matrix.width] =
-                matrix.data[i*matrix.width+j];
-        }
-    }
-    
-    return transposed_matrix;
 }
 
 Matrix SumMatrixes(Matrix mtx1, Matrix mtx2) {
