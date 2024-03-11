@@ -13,6 +13,7 @@ public:
         for (size_t i = 0; i < threads_num; i++) {
             threads.emplace_back(&run, this);
         }
+        cleaning_thread = std::thread(&CleanPromises, this);
     };
 
     ~TransposeWorker() {
@@ -21,6 +22,7 @@ public:
             wake_up.notify_all();
             thread.join();
         }
+        cleaning_thread.join();
     }
 
     std::future<Matrix> AsyncProcess(const Matrix& mtx) {
@@ -53,6 +55,8 @@ private:
     std::unordered_map<int, std::unique_ptr<std::promise<Matrix>>> promises;
     // mutex for hashmap
     std::mutex promise_mutex;
+    // thread for cleaning promises
+    std::thread cleaning_thread;
 
     void run() {
         while (!quite) {
@@ -73,6 +77,17 @@ private:
     void AddTask(const Matrix& mtx, int task_id) {
         std::unique_lock q_lock(task_mutex);
         tasks.emplace(mtx, task_id);
+    }
+
+    void CleanPromises() {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        for (auto it = promises.begin(); it != promises.end();) {
+            if (!it->second) {
+                it = promises.erase(it);
+            } else {
+                it++;
+            }
+        }
     }
 };
 
